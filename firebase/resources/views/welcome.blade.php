@@ -577,14 +577,7 @@
 
 
     const firebaseConfig = {
-        apiKey: "AIzaSyA12XlcvNBsqPrNLbCW_SEOLFVN21ng9xc",
-        authDomain: "my-project-1568565535476.firebaseapp.com",
-        databaseURL: "https://my-project-1568565535476.firebaseio.com",
-        projectId: "my-project-1568565535476",
-        storageBucket: "my-project-1568565535476.appspot.com",
-        messagingSenderId: "542207379699",
-        appId: "1:542207379699:web:c25fd2f48ef75ac3eacf86",
-        measurementId: "G-7ZBE0M3HCS"
+       
     };
     // firebase.initializeApp(firebaseConfig);
     //         firebase.analytics();
