@@ -63,92 +63,130 @@
 </head>
 
 <body>
+    <p>{{ auth::user()->name }}</p>
     <ul id="users"></ul>
     <ul id="messages"></ul>
     <form id="form" action="">
         <input id="input" autocomplete="off" /><button>Send</button>
     </form>
 </body>
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 
-    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"
-        integrity="sha384-7EyYLQZgWBi67fBtVxw60/OWl1kjsfrPFcaU0pp0nAh+i8FD068QogUvg85Ewy1k" crossorigin="anonymous">
-    </script>
-    <script>
-        var socket = io('http://localhost:4000');
+<script src="https://cdn.socket.io/4.5.0/socket.io.min.js"
+integrity="sha384-7EyYLQZgWBi67fBtVxw60/OWl1kjsfrPFcaU0pp0nAh+i8FD068QogUvg85Ewy1k" crossorigin="anonymous"></script>
+<script>
+    var socket = io('http://localhost:4000');
 
-        var messages = document.getElementById('messages');
-        var users_ = document.getElementById('users');
+    var messages = document.getElementById('messages');
+    var users_ = document.getElementById('users');
 
-        var form = document.getElementById('form');
-        var input = document.getElementById('input');
-        const username = "{{ auth::user()->name }}";
-        var user_id = '';
+    var form = document.getElementById('form');
+    var input = document.getElementById('input');
+    const username = "{{ auth::user()->name }}";
+    var user_id = '';
+    let Ausers = [];
+
+    const sessionID = localStorage.getItem("sessionID");
+    if (sessionID) {
+        this.usernameAlreadySelected = true;
+        socket.auth = {
+            sessionID
+        };
+        socket.connect();
+    } else {
         socket.auth = {
             username
         };
         socket.connect();
-        socket.on("connect_error", (err) => {
-            if (err.message === "invalid username") {
-                alert("invalid username");
-            }
-        });
-
-        function sentToUser(u) {
-            user_id = u
-            console.log(u)
-            localStorage.setItem("lastname", "Smith");
-
+        console.log('asdjba')
+    }
+    socket.on("session", ({
+        sessionID,
+        userID
+    }) => {
+        console.log(sessionID, userID)
+        // attach the session ID to the next reconnection attempts
+        socket.auth = {
+            sessionID
+        };
+        // store it in the localStorage
+        localStorage.setItem("sessionID", sessionID);
+        // save the ID of the user
+        socket.userID = userID;
+    });
+    socket.on("connect_error", (err) => {
+        if (err.message === "invalid username") {
+            alert("invalid username");
         }
-        socket.on("users", (users) => {
-            users.forEach((u) => {
-                console.log(u);
-                // let i = document.createElement('li');
-                // console.log(i)
-                // i.textContent = u.username;
-                // i.onclick = function() {
-                //     user_id = u.userID
-                // }
-                // users_.appendChild(i);
-                // console.log(users_)
+    });
+
+    function sentToUser(u) {
+        user_id = u
+
+
+    }
+    socket.on("users", (users) => {
+        Ausers = users;
+        users.forEach((u) => {
+            console.log(u);
+
+            if (u.connected) {
                 $("#users").append(``);
 
                 $("#users").append(`<li onclick="sentToUser('${u.userID}')">${u.username}</li>`);
+            }
+            // let i = document.createElement('li');
+            // console.log(i)
+            // i.textContent = u.username;
+            // i.onclick = function() {
+            //     user_id = u.userID
+            // }
+            // users_.appendChild(i);
+            // console.log(users_)
 
 
-            });
+
         });
+    });
 
-        socket.on("user connected", (user) => {
+    socket.on("user connected", (user) => {
+        const result = Ausers.filter(u => u.userID == user.userID);
+        if(!result){
+
             $("#users").append(``);
 
             $("#users").append(`<li onclick="sentToUser('${user.userID}')">${user.username}</li>`);
+        }
 
-        });
-        // $('form').on('submit', function(e) {
 
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            console.log(user_id)
-            if (input.value) {
-                let content = input.value;
-                socket.emit('chat message', {
-                    content,
-                    to: user_id,
-                });
-                input.value = '';
-            }
-        });
-        socket.on('chat message', ({
-            content,
-            from
-        }) => {
-            console.log(content, from)
+    });
+    socket.on("user disconnected", (id) => {
+        console.log(id)
+    });
+    // $('form').on('submit', function(e) {
 
-            $("#messages").append(`<li>${content}</li>`);
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        console.log(user_id)
+        if (input.value) {
+            let content = input.value;
+            socket.emit('chat message', {
+                content,
+                to: user_id,
+            });
+            input.value = '';
+        }
+    });
+    socket.on('chat message', ({
+        content,
+        from
+    }) => {
+        console.log(content, from)
 
-            window.scrollTo(0, document.body.scrollHeight);
-        });
-    </script>
+        $("#messages").append(`<li>${content}</li>`);
+
+        window.scrollTo(0, document.body.scrollHeight);
+    });
+</script>
 
 </html>
